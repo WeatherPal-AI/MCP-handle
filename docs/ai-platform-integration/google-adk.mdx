@@ -1,0 +1,153 @@
+---
+title: "Google ADK"
+description: "This tutorial demonstrates how to integrate Google Agent Development Kit (ADK) with MCP Handle MCP servers to build AI agents that can interact with Gmail and Slack."
+---
+
+<Frame>
+  <img src="/images/ai-platform/google-adk.png" alt="Google ADK and MCP Handle Integration - Build AI agents with MCP tools" />
+</Frame>
+
+<Tip>
+You can find the complete example code in MCP Handle GitHub repository **[here ->](https://github.com/MCP Handle-AI/mcp_handle/tree/main/examples/google_adk/python)**
+</Tip>
+
+## Prerequisites
+
+Before we begin, you'll need: [Google API key](https://console.cloud.google.com/apis/credentials) and [MCP Handle API key](https://www.mcp-handle.dev/home/api-keys).
+
+## Installation
+
+First, install the required packages:
+
+```bash
+pip install google-adk mcp_handle
+```
+
+## Setup Environment Variables
+
+```python
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+os.environ["MCP_HANDLE_API_KEY"] = "YOUR_MCP_HANDLE_API_KEY"  # Replace
+```
+
+### Step 1 - Create an Agent Project
+
+Run the ADK create command to start a new agent project:
+
+```bash
+adk create my_agent
+```
+
+This will create the following project structure:
+
+```
+my_agent/
+    agent.py      # main agent code
+    .env          # API keys or project IDs
+    __init__.py
+```
+
+### Step 2 - Configure Agent with MCP Handle MCP
+
+The `agent.py` file contains a `root_agent` definition which is the only required element of an ADK agent. 
+
+Update your `agent.py` to integrate MCP Handle MCP servers:
+
+```python
+import os
+import webbrowser
+
+from google.adk.agents.llm_agent import Agent
+from google.adk.tools.mcp_tool import StreamableHTTPConnectionParams
+from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
+from mcp_handle import MCP Handle
+from mcp_handle.types import McpServerName
+
+from dotenv import load_dotenv
+load_dotenv()
+
+MCP_HANDLE_API_KEY = os.getenv("MCP_HANDLE_API_KEY")
+
+# Initialize MCP Handle and set up Strata server
+mcp_handle_client = MCP Handle(api_key=MCP_HANDLE_API_KEY)
+
+user_id = "user_123"
+
+# Create Strata server with multiple MCP servers
+strata_response = mcp_handle_client.mcp_server.create_strata_server(
+    servers=[McpServerName.GMAIL, McpServerName.SLACK],
+    user_id=user_id
+)
+
+# Handle OAuth authentication
+if strata_response.oauth_urls:
+    for server_name, oauth_url in strata_response.oauth_urls.items():
+        user_integration_auth = mcp_handle_client.user.get_user_auth(
+            user_id=user_id,
+            server_name=server_name
+        )
+        if not user_integration_auth.is_authenticated:
+            print(f"🔐 Opening OAuth for {server_name}...")
+            webbrowser.open(oauth_url)
+            input(f"Press Enter after completing {server_name} OAuth authorization...")
+
+mcp_server_url = strata_response.strata_server_url
+
+# Create AI agent with MCP toolset (exposed at module level for ADK)
+root_agent = Agent(
+    name="my_agent",
+    model="gemini-2.5-flash",
+    description="An agent with access to tools through MCP Handle MCP",
+    instruction="You are a helpful assistant with access to MCP tools.",
+    tools=[
+        McpToolset(
+            connection_params=StreamableHTTPConnectionParams(
+                url=mcp_server_url,
+            ),
+        )
+    ],
+)
+```
+
+<Note>
+**OAuth Authorization Required**: The code above will open browser windows for each service. Click through the OAuth flow to authorize access to your accounts.
+</Note>
+
+### Step 3 - Run Your Agent
+
+Launch the web interface to interact with your agent:
+
+```bash
+adk web
+```
+
+This will start a local web server where you can chat with your agent and watch it use the Gmail and Slack MCP tools.
+
+<Check>
+Perfect! You've integrated Google ADK with MCP Handle MCP servers.
+</Check>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Integrations" icon="server" href="/mcp-server/github">
+    Explore available MCP servers
+  </Card>
+  <Card title="API Reference" icon="magnifying-glass" href="/api-reference/introduction">
+    REST endpoints and schemas
+  </Card>
+</CardGroup>
+
+
+## Useful Resources
+
+- [Google ADK Documentation](https://google.github.io/adk/)
+- [Google ADK GitHub](https://github.com/google/adk)
+- [MCP Protocol Specification](https://modelcontextprotocol.io/)
+
+**Happy building!** 🚀
+
