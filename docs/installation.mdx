@@ -1,0 +1,26 @@
+---
+title: Installation
+description: Install MCP Handle SDK or use REST API directly
+icon: wrench
+---
+
+## SDK Installation
+
+<CodeGroup>
+```bash Python
+pip install mcp_handle
+```
+
+```bash TypeScript
+npm install mcp_handle
+```
+</CodeGroup>
+
+## REST API
+
+```bash
+curl -X POST "https://api.mcp-handle.dev/mcp-server/instance/create" \
+  -H "Authorization: Bearer YOUR_MCP_HANDLE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"serverName": "Gmail", "userId": "user123"}'
+```
