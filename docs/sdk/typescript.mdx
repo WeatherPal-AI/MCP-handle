@@ -1,0 +1,304 @@
+---
+title: "TypeScript"
+description: "Get started with MCP Handle AI TypeScript SDK for MCP integrations"
+---
+
+## Installation
+
+```bash
+npm install mcp_handle
+```
+
+## Get Your API Key
+
+Sign up at [mcp-handle.dev](https://www.mcp-handle.dev) and create your API key.
+
+## Quick Start
+
+```javascript
+import { MCP HandleClient, MCP Handle } from 'mcp_handle';
+
+const mcp_handleClient = new MCP HandleClient({ apiKey: 'your-mcp_handle-key' });
+
+// Create Gmail MCP server with OAuth
+const gmailServer = await mcp_handleClient.mcpServer.createServerInstance({
+    serverName: MCP Handle.McpServerName.Gmail,
+    userId: "user123"
+});
+
+// Gmail needs OAuth flow
+await window.open(gmailServer.oauthUrl);
+```
+
+## Integration with MCP Client
+
+If you already have an MCP client implementation in your codebase:
+
+```javascript
+import { MCP HandleClient, MCP Handle } from 'mcp_handle';
+
+const mcp_handleClient = new MCP HandleClient({ apiKey: 'your-mcp_handle-key' });
+
+// Create Gmail MCP server with OAuth
+const gmailServer = await mcp_handleClient.mcpServer.createServerInstance({
+    serverName: MCP Handle.McpServerName.Gmail,
+    userId: "user123"
+});
+
+// Gmail needs OAuth flow
+if (gmailServer.oauthUrl) {
+    await window.open(gmailServer.oauthUrl);
+}
+```
+
+## Function Calling with OpenAI
+
+Integrate directly with OpenAI using function calling:
+
+```javascript
+import OpenAI from 'openai';
+import { MCP HandleClient, MCP Handle } from 'mcp_handle';
+
+// Constants
+const OPENAI_MODEL = "gpt-4o-mini";
+const EMAIL_RECIPIENT = "john@example.com";
+const EMAIL_SUBJECT = "Hello from MCP Handle";
+const EMAIL_BODY = "This email was sent using MCP Handle MCP Server!";
+
+const openaiClient = new OpenAI({ apiKey: 'your-openai-key' });
+const mcp_handleClient = new MCP HandleClient({ apiKey: 'your-mcp_handle-key' });
+
+// Create server and get tools
+const gmailServer = await mcp_handleClient.mcpServer.createServerInstance({
+    serverName: MCP Handle.McpServerName.Gmail,
+    userId: "user123"
+});
+
+// Handle OAuth authentication for Gmail
+if (gmailServer.oauthUrl) {
+    console.log("Please complete OAuth authorization:", gmailServer.oauthUrl);
+    await window.open(gmailServer.oauthUrl);
+}
+
+const tools = await mcp_handleClient.mcpServer.listTools({
+    serverUrl: gmailServer.serverUrl,
+    format: MCP Handle.ToolFormat.Openai
+});
+
+// Initial conversation
+const messages = [{ 
+    role: "user", 
+    content: `Please send an email to ${EMAIL_RECIPIENT} with subject "${EMAIL_SUBJECT}" and body "${EMAIL_BODY}"` 
+}];
+
+// First OpenAI call with function calling
+const response = await openaiClient.chat.completions.create({
+    model: OPENAI_MODEL,
+    messages: messages,
+    tools: tools.tools
+});
+
+messages.push(response.choices[0].message);
+
+// Handle tool calls
+if (response.choices[0].message.tool_calls) {
+    for (const toolCall of response.choices[0].message.tool_calls) {
+        const result = await mcp_handleClient.mcpServer.callTools({
+            serverUrl: gmailServer.serverUrl,
+            toolName: toolCall.function.name,
+            toolArgs: JSON.parse(toolCall.function.arguments)
+        });
+        
+        // Add tool result to conversation
+        messages.push({
+            role: "tool",
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(result)
+        });
+    }
+}
+
+// Second OpenAI call to process tool results and generate final response
+const finalResponse = await openaiClient.chat.completions.create({
+    model: OPENAI_MODEL,
+    messages: messages
+});
+
+console.log(finalResponse.choices[0].message.content);
+```
+
+## Authentication
+
+### OAuth Services
+
+For OAuth services like Gmail, Google Drive, etc.:
+
+```javascript
+// Create server instance for OAuth service
+const server = await mcp_handleClient.mcpServer.createServerInstance({
+    serverName: MCP Handle.McpServerName.Gmail,
+    userId: "user123"
+});
+
+// Handle OAuth flow
+if (server.oauthUrl) {
+    console.log("Please complete OAuth authorization:", server.oauthUrl);
+    window.open(server.oauthUrl);
+}
+```
+
+### API Key Services
+
+For services that require API keys:
+
+```javascript
+// Set authentication token for API key services
+await mcp_handleClient.mcpServer.setAuthToken({
+    instanceId: server.instanceId,
+    authData: {
+        token: "your-service-api-key"
+    }
+});
+```
+
+## Multi-Tool Workflows
+
+Combine multiple MCP servers for complex workflows:
+
+```javascript
+// Create multiple servers
+const githubServer = await mcp_handleClient.mcpServer.createServerInstance({
+    serverName: MCP Handle.McpServerName.Github,
+    userId: "user123"
+});
+
+const slackServer = await mcp_handleClient.mcpServer.createServerInstance({
+    serverName: MCP Handle.McpServerName.Slack,
+    userId: "user123"
+});
+
+// Get tools from both servers
+const githubTools = await mcp_handleClient.mcpServer.listTools({
+    serverUrl: githubServer.serverUrl,
+    format: MCP Handle.ToolFormat.Openai
+});
+
+const slackTools = await mcp_handleClient.mcpServer.listTools({
+    serverUrl: slackServer.serverUrl,
+    format: MCP Handle.ToolFormat.Openai
+});
+
+// Combine all tools
+const allTools = [...githubTools.tools, ...slackTools.tools];
+
+// Initialize conversation
+const messages = [{ 
+    role: "user", 
+    content: "Create a GitHub issue and notify the team on Slack" 
+}];
+
+// Loop to let LLM work with multiple tools
+const maxIterations = 5;
+for (let iteration = 0; iteration < maxIterations; iteration++) {
+    const response = await openaiClient.chat.completions.create({
+        model: "gpt-4",
+        messages: messages,
+        tools: allTools
+    });
+    
+    messages.push(response.choices[0].message);
+    
+    // Check if LLM wants to use tools
+    if (response.choices[0].message.tool_calls) {
+        for (const toolCall of response.choices[0].message.tool_calls) {
+            // Determine which server to use based on tool name
+            const serverUrl = toolCall.function.name.includes('github') 
+                ? githubServer.serverUrl 
+                : slackServer.serverUrl;
+            
+            // Execute tool
+            const result = await mcp_handleClient.mcpServer.callTools({
+                serverUrl: serverUrl,
+                toolName: toolCall.function.name,
+                toolArgs: JSON.parse(toolCall.function.arguments)
+            });
+            
+            // Add tool result to conversation
+            messages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: JSON.stringify(result)
+            });
+        }
+    } else {
+        // LLM finished the task
+        console.log(`Task completed in ${iteration + 1} iterations`);
+        console.log(response.choices[0].message.content);
+        break;
+    }
+}
+```
+
+## Error Handling
+
+```javascript
+import { MCP HandleError } from 'mcp_handle';
+
+try {
+    const server = await mcp_handleClient.mcpServer.createServerInstance({
+        serverName: MCP Handle.McpServerName.Youtube,
+        userId: "user123"
+    });
+} catch (error) {
+    if (error instanceof MCP HandleError) {
+        console.error(`MCP Handle Error: ${error.message}`);
+    } else {
+        console.error(`Unexpected error: ${error}`);
+    }
+}
+```
+
+## TypeScript Types
+
+The SDK is fully typed for better development experience:
+
+```typescript
+import { MCP HandleClient, MCP Handle } from 'mcp_handle';
+import type { 
+    ServerInstance, 
+    ToolsResponse, 
+    CallToolResponse 
+} from 'mcp_handle/types';
+
+const mcp_handleClient = new MCP HandleClient({ apiKey: 'your-mcp_handle-key' });
+
+// Type-safe server creation
+const server: ServerInstance = await mcp_handleClient.mcpServer.createServerInstance({
+    serverName: MCP Handle.McpServerName.Github,
+    userId: "user123"
+});
+
+// Type-safe tool listing
+const tools: ToolsResponse = await mcp_handleClient.mcpServer.listTools({
+    serverUrl: server.serverUrl,
+    format: MCP Handle.ToolFormat.Openai
+});
+
+// Type-safe tool calling
+const result: CallToolResponse = await mcp_handleClient.mcpServer.callTools({
+    serverUrl: server.serverUrl,
+    toolName: "get_repository",
+    toolArgs: { owner: "octocat", repo: "Hello-World" }
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="api" href="/api-reference/introduction">
+    Complete API documentation
+  </Card>
+  <Card title="MCP Servers" icon="server" href="/mcp-server/github">
+    Explore available MCP servers
+  </Card>
+</CardGroup> 
