@@ -1,0 +1,18 @@
+{
+  "name": "mcp_handle",
+  "version": "1.0.0",
+  "description": "CLI tool for managing MCP Handle MCP servers in Google Gemini CLI",
+  "keywords": ["mcp", "gemini", "cli", "automation", "server", "config"],
+  "author": "mcp-handle.dev",
+  "license": "MIT",
+  "bin": {
+    "mcp_handle": "./index.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ]
+}
