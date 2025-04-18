@@ -1,0 +1,4 @@
+openai>=1.109.1
+mcp_handle==2.9.0
+python-dotenv>=1.1.0
+requests>=2.31.0
