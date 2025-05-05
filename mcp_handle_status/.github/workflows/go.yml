@@ -1,0 +1,240 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, github_main ]
+  pull_request:
+    branches: [ main, github_main ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag for release'
+        required: false
+        default: ''
+
+
+
+jobs:
+  lint:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+        cache: true
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Create dummy frontend dist for Go linting
+      run: |
+        mkdir -p frontend/dist
+        echo "<html><body>dummy file</body></html>" > frontend/dist/index.html
+
+    - name: Lint Go code
+      run: |
+        go vet ./...
+        go fmt ./...
+        # Check if there are any formatting changes
+        if [ -n "$(git diff --name-only)" ]; then
+          echo "Code is not properly formatted. Please run 'go fmt ./...'"
+          git diff
+          exit 1
+        fi
+
+    - name: Lint frontend code
+      run: |
+        cd frontend
+        npm run lint
+
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+        cache: true
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Create test database directory
+      run: mkdir -p data
+
+    - name: Create dummy frontend dist for Go tests
+      run: |
+        mkdir -p frontend/dist
+        echo "<html><body>dummy file</body></html>" > frontend/dist/index.html
+
+    - name: Run Go tests
+      env:
+        GIN_MODE: test
+      run: |
+        go test -v -race -coverprofile=coverage.out ./...
+
+    - name: Generate coverage report
+      run: |
+        go tool cover -html=coverage.out -o coverage.html
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-coverage
+        path: |
+          coverage.out
+          coverage.html
+
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    needs: [lint, test-backend]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+        cache: true
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Read version
+      id: version
+      run: |
+        if [ -f VERSION ]; then
+          VERSION=$(cat VERSION)
+        else
+          VERSION="dev-$(git rev-parse --short HEAD)"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm ci
+        REACT_APP_VERSION=${{ steps.version.outputs.version }} npm run build
+
+    - name: Build binary
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
+      run: |
+        mkdir -p release
+        OUTPUT_NAME="mcp-handle-status-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          OUTPUT_NAME="${OUTPUT_NAME}.exe"
+        fi
+        
+        go build -ldflags="-s -w -X 'github.com/WeatherPal-AI/MCP-handle/mcp_handle_status/backend/common.Version=${{ steps.version.outputs.version }}'" \
+          -o "release/${OUTPUT_NAME}" main.go
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binary-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: release/
+        retention-days: 30
+
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        find artifacts -name "mcp-handle-status-*" -type f -exec cp {} release-assets/ \;
+        ls -la release-assets/
+        
+        # Create a zip file with all binaries
+        cd release-assets
+        zip -r "../mcp-handle-status-binaries-${{ github.event.inputs.version }}.zip" .
+        cd ..
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        release_name: Release ${{ github.event.inputs.version }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./mcp-handle-status-binaries-${{ github.event.inputs.version }}.zip
+        asset_name: mcp-handle-status-binaries-${{ github.event.inputs.version }}.zip
+        asset_content_type: application/zip
+
+    - name: Upload individual binaries
+      run: |
+        for file in release-assets/*; do
+          if [ -f "$file" ]; then
+            filename=$(basename "$file")
+            echo "Uploading $filename..."
+            curl -L \
+              -X POST \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/octet-stream" \
+              "${{ steps.create_release.outputs.upload_url }}?name=$filename" \
+              --data-binary "@$file"
+          fi
+        done 
