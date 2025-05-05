@@ -1,0 +1,312 @@
+<p align="right">
+    <a href="./README.md">English</a> | <strong>中文</strong>
+</p>
+
+# MCP Handle Status
+
+<div align="center">
+
+**MCP Handle Status** - 模型上下文协议 (MCP) 服务的集中式代理
+
+*✨ 从单一界面管理、监控和配置您的 MCP 服务 ✨*
+
+<br />
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/burugo/mcp-handle-status?style=flat-square)](https://goreportcard.com/report/github.com/burugo/mcp-handle-status)
+[![Go CI](https://img.shields.io/github/actions/workflow/status/burugo/mcp-handle-status/go.yml?style=flat-square&logo=github&label=Go%20CI)](https://github.com/WeatherPal-AI/MCP-handle/tree/main/mcp_handle_status/actions)
+[![GitHub license](https://img.shields.io/github/license/burugo/mcp-handle-status?style=flat-square)](https://github.com/WeatherPal-AI/MCP-handle/tree/main/mcp_handle_status/blob/main/LICENSE)
+
+[![Go](https://img.shields.io/badge/Go-1.19+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://golang.org/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/weatherpal-ai/mcp-handle-status)
+
+</div>
+
+<p align="center">
+  <a href="#功能特性">功能特性</a> •
+  <a href="#快速开始">快速开始</a> •
+  <a href="#安装部署">安装部署</a> •
+  <a href="#配置说明">配置说明</a> •
+  <a href="#开发指南">开发指南</a> •
+  <a href="#贡献代码">贡献代码</a>
+</p>
+
+---
+
+## 概述
+
+MCP Handle Status 是一个全面的模型上下文协议 (MCP) 服务管理平台。作为集中式代理，它让您可以从各种提供商发现、安装、配置和监控 MCP 服务。使用 Go 和 React 构建，提供强大的后端功能和直观的 Web 界面。
+
+<!-- 截图占位符 - 仪表板/主界面 -->
+![Screenshot](./images/dashboard.png)
+
+## 功能特性
+
+### 🚀 **服务管理**
+- **安装与配置**：从市场或自定义源部署 MCP 服务
+- **多种服务类型**：支持 stdio、服务器发送事件 (SSE) 和可流式 HTTP 服务
+- **环境管理**：安全处理服务环境变量和配置
+- **健康监控**：实时服务健康检查和状态监控
+
+### 🛒 **服务市场**
+- **发现服务**：浏览和搜索来自各种仓库的 MCP 服务
+- **一键安装**：简单的安装过程，自动解决依赖关系
+- **自定义服务**：创建和部署具有灵活配置选项的自定义 MCP 服务
+
+### 📊 **分析与监控**
+- **使用统计**：跟踪服务利用率和性能指标
+- **请求分析**：监控 API 请求、响应时间和错误率
+- **系统健康**：全面的系统状态和正常运行时间监控
+
+### 👥 **用户管理**
+- **多用户支持**：基于角色的访问控制，支持管理员和用户角色
+- **OAuth 集成**：支持 GitHub 和 Google 账户登录
+- **安全认证**：基于令牌的认证，支持刷新令牌
+
+### 🌐 **国际化**
+- **多语言支持**：英语和中文（简体）界面
+- **本地化内容**：完全翻译的用户界面和错误消息
+- **语言持久化**：跨会话保存用户语言偏好
+
+### ⚙️ **高级配置**
+- **环境变量**：灵活的配置管理
+- **数据库支持**：SQLite（默认），支持 MySQL/PostgreSQL
+- **Redis 集成**：可选的 Redis 支持，用于分布式缓存
+- **Docker 就绪**：完整的 Docker 支持，便于部署
+
+<!-- 截图占位符 - 服务管理界面 -->
+![Screenshot](./images/services.png)
+![Screenshot](./images/copy_config.png)
+
+## 快速开始
+
+### 使用 Docker（推荐）
+
+```bash
+# 构建并运行 Docker 镜像
+docker build -t weatherpal-ai/mcp-handle-status .
+docker run --name mcp-handle-status -d \
+  --restart always \
+  -p 3000:3000 \
+  -v $(pwd)/data:/data \
+  weatherpal-ai/mcp-handle-status:latest
+
+# 访问应用程序
+open http://localhost:3000
+```
+
+### 手动安装
+
+```bash
+# 克隆仓库
+git clone https://github.com/WeatherPal-AI/MCP-handle.git
+cd MCP-handle/mcp_handle_status
+
+# 设置环境
+cp .env_example .env
+
+# 安装依赖并构建
+go mod tidy
+cd frontend && npm install && npm run build && cd ..
+
+# 运行应用程序
+go run main.go
+```
+
+**默认登录**：用户名 `root`，密码 `123456`
+
+## 安装部署
+
+### 前置要求
+
+- **Go**：版本 1.19 或更高
+- **Node.js**：版本 16 或更高  
+- **数据库**：SQLite（默认）、MySQL 或 PostgreSQL
+- **Redis**：可选，用于分布式缓存
+
+### 环境配置
+
+从模板创建 `.env` 文件：
+
+```bash
+cp .env_example .env
+```
+
+主要配置选项：
+
+```bash
+# 服务器配置
+PORT=3000
+
+# 数据库（可选，默认使用 SQLite）
+# SQLite(default)
+# SQLITE_PATH=/data/mcp-handle-status.db
+# MySQL:
+# SQL_DSN=root:password@tcp(localhost:3306)/mcp_handle_status
+# PostgreSQL:
+# SQL_DSN=postgres://username:password@localhost/database_name?sslmode=disable
+# Redis（可选，代替本地缓存，用于生产环境）
+REDIS_CONN_STRING=redis://localhost:6379
+
+# GitHub API（可选，在服务器查询npm所在github主页的star数，不填会有rate limit的问题）
+GITHUB_TOKEN=your-github-token
+```
+
+### Docker 部署
+
+```bash
+# 构建 Docker 镜像
+docker build -t mcp-handle-status .
+
+# 使用 docker-compose 运行（推荐）
+docker-compose up -d
+
+# 或直接运行
+docker run -d \
+  --name mcp-handle-status \
+  -p 3000:3000 \
+  -v ./data:/data \
+  -e PORT=3000 \
+  mcp-handle-status
+```
+
+### 手动部署
+
+1. **构建应用程序**：
+   ```bash
+   ./deploy/build.sh
+   ```
+
+2. **运行服务器**：
+   ```bash
+   ./mcp-handle-status --port 3000
+   ```
+
+3. **访问应用程序**：
+   在浏览器中打开 http://localhost:3000
+
+## 配置说明
+
+### OAuth 设置
+
+#### GitHub OAuth
+1. 在 https://github.com/settings/applications/new 创建 GitHub OAuth 应用
+2. 设置主页 URL：`http://your-domain.com`
+3. 设置授权回调 URL：`http://your-domain.com/oauth/github`
+4. 在应用程序首选项中配置
+
+#### Google OAuth
+1. 在 https://console.developers.google.com/ 创建凭据
+2. 设置授权的 JavaScript 来源：`http://your-domain.com`
+3. 设置授权的重定向 URI：`http://your-domain.com/oauth/google`
+4. 在应用程序首选项中配置
+
+### 数据库配置
+
+#### SQLite（默认）
+无需额外配置。数据库文件在 `./data/mcp-handle-status.db` 创建。
+
+#### MySQL
+```bash
+SQL_DSN=username:password@tcp(localhost:3306)/database_name
+```
+
+#### PostgreSQL
+```bash
+SQL_DSN=postgres://username:password@localhost/database_name?sslmode=disable
+```
+
+## API 文档
+
+应用程序为所有功能提供 RESTful API：
+
+- **基础 URL**：`http://localhost:3000/api`
+- **认证**：Bearer 令牌（通过登录获取）
+- **内容类型**：`application/json`
+
+### 主要端点
+
+- `POST /api/auth/login` - 用户认证
+- `GET /api/services` - 列出已安装的服务
+- `POST /api/services` - 安装新服务
+- `GET /api/market/search` - 搜索市场
+- `GET /api/analytics/usage` - 使用统计
+
+## 开发指南
+
+### 开发环境
+
+```bash
+# 启动开发服务器
+./run.sh
+
+# 这将启动：
+# - 后端服务器在 :3000
+# - 前端开发服务器在 :5173（支持热重载）
+```
+
+### 项目结构
+
+```
+mcp-handle-status/
+├── backend/         # Go 后端代码
+├── frontend/        # React 前端代码  
+├── data/           # 数据库和上传文件
+├── main.go         # 应用程序入口点
+├── deploy/         # 部署脚本
+│   ├── build.sh        # 生产构建脚本
+│   ├── local-deploy.sh # 本地部署脚本
+│   └── push-to-dockerhub.sh # Docker Hub 推送脚本
+└── run.sh          # 开发脚本
+```
+
+### 测试
+
+```bash
+# 前端测试
+cd frontend && npm test
+
+# 后端测试
+go test ./...
+```
+
+详细的开发说明请参见 [DEVELOPMENT.md](./DEVELOPMENT.md)。
+
+## 贡献代码
+
+我们欢迎贡献！请参见我们的贡献指南：
+
+1. **Fork** 仓库
+2. **创建** 功能分支 (`git checkout -b feature/amazing-feature`)
+3. **提交** 更改 (`git commit -m 'Add amazing feature'`)
+4. **推送** 到分支 (`git push origin feature/amazing-feature`)
+5. **打开** Pull Request
+
+### 开发指南
+
+- 遵循 Go 和 TypeScript 最佳实践
+- 为新功能添加测试
+- 根据需要更新文档
+- 确保所有测试在提交前通过
+
+## 路线图
+
+## 支持
+
+- **文档**：[Wiki](https://github.com/WeatherPal-AI/MCP-handle/tree/main/mcp_handle_status/wiki)
+- **问题反馈**：[GitHub Issues](https://github.com/WeatherPal-AI/MCP-handle/tree/main/mcp_handle_status/issues)
+
+## 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+
+---
+
+<div align="center">
+
+如果您觉得这个项目有帮助，请 **[⭐ 给项目点星](https://github.com/WeatherPal-AI/MCP-handle/tree/main/mcp_handle_status)**！
+
+由 MCP Handle Status 团队用 ❤️ 制作
+
+</div>
