@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  mcp-handle-status:
+    image: docker.io/buru2020/mcp-handle-status:latest
+    container_name: mcp-handle-status
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      - JWT_SECRET=your-very-secret-key
+      - SQLITE_PATH=/data/mcp-handle-status.db
+      # We are using the GitHub API to find out how many stars npm packages have. 
+      # get GITHUB_TOKEN from https://github.com/settings/tokens 
+      # - GITHUB_TOKEN=your-github-token 
