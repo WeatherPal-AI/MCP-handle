@@ -1,4 +1,4 @@
-# MCP-Handle by 低温宝
+# MCP-Handle
 
 <div align="center">
   <picture>
