@@ -1,5 +1,0 @@
-mcp==1.12.3
-httpx
-click
-starlette
-python-dotenv

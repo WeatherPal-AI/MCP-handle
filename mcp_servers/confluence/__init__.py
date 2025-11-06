@@ -1,1 +1,0 @@
-# Confluence MCP Server Package 
