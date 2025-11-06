@@ -8,10 +8,15 @@
 
 <div align="center">
 
-[![Documentation](https://img.shields.io/badge/Documentation-📖-green)](https://www.mcp-handle.com/docs) [![Website](https://img.shields.io/badge/Website-🌐-purple)](https://www.mcp-handle.com) [![Discord](https://img.shields.io/badge/Discord-Join-7289DA?logo=discord&logoColor=white)](https://discord.gg/p7TuTEcson)
+[![Documentation](https://img.shields.io/badge/Documentation-📖-green)](https://www.mcp-handle.com/docs) [![Website](https://img.shields.io/badge/Website-🌐-purple)](https://www.mcp-handle.com)
 
-  <img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=1016948&theme=light&period=daily&t=1758639605639" alt="Strata - One&#0032;MCP&#0032;server&#0032;for&#0032;AI&#0032;agents&#0032;to&#0032;handle&#0032;thousands&#0032;of&#0032;tools | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
-  <img src="https://trendshift.io/api/badge/repositories/12132" alt="Trendshift.io Badge" style="width: 250px; height: 54px;" />
+  <a href="https://www.producthunt.com/products/mcp-handle?utm_source=other&utm_medium=social" target="_blank" rel="noopener noreferrer">
+    <img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=1016948&theme=light&period=daily&t=1758639605639" alt="Strata - One&#0032;MCP&#0032;server&#0032;for&#0032[...]  
+  " />
+  </a>
+  <a href="https://www.producthunt.com/products/mcp-handle?utm_source=other&utm_medium=social" target="_blank" rel="noopener noreferrer">
+    <img src="https://trendshift.io/api/badge/repositories/12132" alt="Trendshift.io Badge" style="width: 250px; height: 54px;" />
+  </a>
 </div>
 
 ---
