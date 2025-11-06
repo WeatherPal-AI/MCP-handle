@@ -1,3 +1,0 @@
-google-adk>=1.16.0
-mcp_handle>=2.11.1
-python-dotenv>=1.1.0
