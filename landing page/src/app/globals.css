@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --accent: #0ea5e9;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+.marquee-wrapper {
+  mask-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.9) 10%, rgba(0, 0, 0, 0.9) 90%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.9) 10%, rgba(0, 0, 0, 0.9) 90%, transparent);
+}
+
+.marquee-track {
+  animation: marquee-scroll 40s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+[data-reveal] {
+  --reveal-opacity: 0;
+  --reveal-translate-x: 0px;
+  --reveal-translate-y: var(--reveal-offset, 28px);
+  --reveal-scale: 1;
+  --reveal-rotate: 0deg;
+  --reveal-blur: 8px;
+  opacity: var(--reveal-opacity);
+  transform: translate3d(var(--reveal-translate-x), var(--reveal-translate-y), 0)
+    scale3d(var(--reveal-scale), var(--reveal-scale), 1) rotate(var(--reveal-rotate));
+  filter: blur(var(--reveal-blur));
+  transition-property: opacity, transform, filter;
+  transition-duration: var(--reveal-duration, 0.7s);
+  transition-delay: var(--reveal-delay, 0s);
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform, filter;
+}
+
+[data-reveal="fade"] {
+  --reveal-translate-y: 0px;
+  --reveal-blur: 14px;
+}
+
+[data-reveal="up"] {
+  --reveal-translate-y: var(--reveal-offset, 32px);
+}
+
+[data-reveal="down"] {
+  --reveal-translate-y: calc(var(--reveal-offset, 32px) * -1);
+}
+
+[data-reveal="left"] {
+  --reveal-translate-x: calc(var(--reveal-offset, 32px) * -1);
+  --reveal-translate-y: 0px;
+}
+
+[data-reveal="right"] {
+  --reveal-translate-x: var(--reveal-offset, 32px);
+  --reveal-translate-y: 0px;
+}
+
+[data-reveal="scale"] {
+  --reveal-scale: 0.94;
+  --reveal-blur: 12px;
+}
+
+[data-reveal].is-visible {
+  --reveal-opacity: 1;
+  --reveal-translate-x: 0px;
+  --reveal-translate-y: 0px;
+  --reveal-scale: 1;
+  --reveal-rotate: 0deg;
+  --reveal-blur: 0px;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.flip-stage {
+  perspective: 1600px;
+  transform-style: preserve-3d;
+}
+
+.flip-card {
+  position: relative;
+  width: 100%;
+  --flip-rotate: 52deg;
+  --flip-translate: 76px;
+  --flip-scale: 0.87;
+  --flip-shadow: 0.34;
+  transform-origin: top center;
+  transform:
+    perspective(1600px)
+    translateY(var(--flip-translate))
+    scale(var(--flip-scale))
+    rotateX(var(--flip-rotate));
+  transition: transform 0.2s ease-out;
+  will-change: transform;
+  backface-visibility: hidden;
+  pointer-events: auto;
+}
+
+.flip-card-panel {
+  box-shadow:
+    0 calc(46px * var(--flip-shadow)) calc(140px * var(--flip-shadow)) rgba(15, 23, 42, 0.3),
+    0 calc(20px * var(--flip-shadow)) calc(72px * var(--flip-shadow)) rgba(14, 165, 233, 0.18);
+  transition: box-shadow 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-card {
+    transform: perspective(1600px) translateY(0) scale(1) rotateX(0deg);
+  }
+
+  .marquee-track {
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+  }
+
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+}
